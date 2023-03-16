@@ -1,0 +1,67 @@
+input {
+#  file {
+#    path => "/usr/share/logstash/tmp/*.log"
+#    start_position => "beginning"
+#    tags => ["sys", "file"]
+#   }
+  beats {
+    port => "5044"
+    tags => ["sys", "beats"] 
+  }
+}
+
+filter {
+ grok {
+   match =>  ["message" , "%{COMBINEDAPACHELOG}+%{GREEDYDATA:extra_fields}"]
+   overwrite => [ "message" ]
+ }
+ mutate {
+   convert => ["response", "integer"]
+   convert => ["bytes", "integer"]
+   convert => ["responsetime", "float"]
+   add_field => { "[fileset][name]" => "access" }
+ }
+ geoip {
+   source => "[nginx][access][agent]" #"clientip"
+   target => "[nginx][access][user_agent]" #"geoip"
+   add_tag => [ "nginx-geoip" ]
+ }
+ date {
+   match => [ "timestamp" , "dd/MMM/YYYY:HH:mm:ss Z" ]
+   remove_field => [ "timestamp" ]
+ }
+ useragent {
+   source => "[nginx][access][agent]" #"agent"
+    target => "[nginx][access][user_agent]"
+    remove_field => "[nginx][access][agent]"
+ }
+}
+
+
+#filter {
+#  grok {
+#    match => { "message" => "%{IPORHOST:remote_ip} - %{DATA:user_name} \[%{HTTPDATE:access_time}\] \"%{WORD:http_method} %{DATA:url} HTTP/%{NUMBER:http_version}\" %{NUMBER:response_code} %{NUMBER:body_sent_bytes} \"%{DATA:referrer}\" \"%{DATA:agent}\"" }
+#   }
+#}
+output {
+  if [tags][1] == "file" {
+    opensearch {
+      hosts       => "https://opensearch-node1:9200"
+      user        => "admin"
+      password    => "admin"
+      index       => "file-logstash-logs-%{+YYYY.MM.dd}"
+      ssl_certificate_verification => false
+    }
+  } 
+  else if [tags][1] == "beats" {
+    opensearch {
+      hosts       => "https://opensearch-node1:9200"
+      user        => "admin"
+      password    => "admin"
+      index       => "beats-logstash-logs-%{+YYYY.MM.dd}"
+      ssl_certificate_verification => false
+    }
+  }  
+# stdout { codec => rubydebug }
+}
+
