@@ -1,7 +1,7 @@
 # OpenSearch_Logstash_Filebeat_test
 Stack Filebeat -> Logstash -> OpenSearch
 
-Test to deploy OpenSearch and create a stack with Logstash and Filebeat. Docker Compose was used as an automated tool for installation and management.
+Test to deploy OpenSearch and create a stack with Logstash and Filebeat  (also realized option without Filebeat - the file is processed directly). Docker Compose was used as an automated tool for installation and management.
 
 Opensearch is organized as a cluster with two nodes. Also deployed OpenSearch Dashboards.
 
